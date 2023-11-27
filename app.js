@@ -8,7 +8,9 @@ app.use(express.static("public"));
 var methodOverride = require("method-override");
 app.use(methodOverride("_method"));
 const router = require("./routes/allRoutes")
-
+var cookieParser = require('cookie-parser')
+app.use(cookieParser())
+app.use(express.json())
 
 
 mongoose

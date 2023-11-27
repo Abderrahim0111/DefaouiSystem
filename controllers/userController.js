@@ -1,13 +1,17 @@
-const Customer = require("../models/customerSchema");
+const { render } = require("ejs");
+const CustomerAuth = require("../models/authSchema");
 var moment = require("moment");
+var jwt = require("jsonwebtoken");
 
-
+const user_welcome_get = (req, res) => {
+  res.render("welcome");
+};
 
 const user_index_get = (req, res) => {
-  //result ======> array of objects
-  Customer.find()
+  var decoded = jwt.verify(req.cookies.jwt, "shhhhhh");
+  CustomerAuth.findOne({ _id: decoded.id })
     .then((result) => {
-      res.render("index", { arr: result, moment: moment });
+      res.render("index", { arr: result.customerInfo, moment: moment });
     })
     .catch((err) => {
       console.log(err);
@@ -19,9 +23,12 @@ const user_add_get = (req, res) => {
 };
 
 const user_edit_get = (req, res) => {
-  Customer.findById(req.params.id)
+  CustomerAuth.findOne({ "customerInfo._id": req.params.id })
     .then((result) => {
-      res.render("user/edit", { obj: result });
+      const clickedObject = result.customerInfo.find((item) => {
+        return item._id == req.params.id;
+      });
+      res.render("user/edit", { obj: clickedObject });
     })
     .catch((err) => {
       console.log(err);
@@ -29,9 +36,12 @@ const user_edit_get = (req, res) => {
 };
 
 const user_view_get = (req, res) => {
-  Customer.findById(req.params.id)
+  CustomerAuth.findOne({ "customerInfo._id": req.params.id })
     .then((result) => {
-      res.render("user/view", { obj: result, moment: moment });
+      const clickedObject = result.customerInfo.find((item) => {
+        return item._id == req.params.id;
+      });
+      res.render("user/view", { obj: clickedObject, moment: moment });
     })
     .catch((err) => {
       console.log(err);
@@ -39,11 +49,26 @@ const user_view_get = (req, res) => {
 };
 
 const user_add_post = (req, res) => {
-  const customer = new Customer(req.body); // or User.create(req.body)
-  customer
-    .save()
+  var decoded = jwt.verify(req.cookies.jwt, "shhhhhh");
+  CustomerAuth.updateOne(
+    { _id: decoded.id },
+    {
+      $push: {
+        customerInfo: {
+          firstName: req.body.firstName,
+          lastName: req.body.lastName,
+          email: req.body.email,
+          phoneNumber: req.body.phoneNumber,
+          age: req.body.age,
+          country: req.body.country,
+          gender: req.body.gender,
+          createdAt: new Date(),
+        },
+      },
+    }
+  )
     .then(() => {
-      res.redirect("/");
+      res.redirect("/home");
     })
     .catch((err) => {
       console.log(err);
@@ -52,17 +77,16 @@ const user_add_post = (req, res) => {
 
 const user_search_post = (req, res) => {
   const searchText = req.body.searchText.trim();
-  Customer.find({
-    $or: [
-      { firstName: searchText },
-      { lastName: searchText },
-      { age: searchText },
-      { country: searchText },
-      { gender: searchText },
-    ],
-  })
+  var decoded = jwt.verify(req.cookies.jwt, "shhhhhh");
+  CustomerAuth.findOne({ _id: decoded.id })
     .then((result) => {
-      res.render("user/search", { arr: result });
+      const searchCustomers = result.customerInfo.filter((item) => {
+        return (
+          item.firstName.includes(searchText) ||
+          item.lastName.includes(searchText)
+        );
+      });
+      res.render("user/search", { arr: searchCustomers });
     })
     .catch((err) => {
       console.log(err);
@@ -70,9 +94,13 @@ const user_search_post = (req, res) => {
 };
 
 const user_delete = (req, res) => {
-  Customer.findByIdAndDelete(req.params.id)
+  var decoded = jwt.verify(req.cookies.jwt, "shhhhhh");
+  CustomerAuth.updateOne(
+    { _id: decoded.id },
+    { $pull: { customerInfo: { _id: req.params.id } } }
+  )
     .then(() => {
-      res.redirect("/");
+      res.redirect("/home");
     })
     .catch((err) => {
       console.log(err);
@@ -80,9 +108,21 @@ const user_delete = (req, res) => {
 };
 
 const user_put = (req, res) => {
-  Customer.findByIdAndUpdate(req.params.id, req.body)
+  CustomerAuth.updateOne(
+    { "customerInfo._id": req.params.id },
+    {
+      "customerInfo.$.firstName": req.body.firstName,
+      "customerInfo.$.lastName": req.body.lastName,
+      "customerInfo.$.email": req.body.email,
+      "customerInfo.$.phoneNumber": req.body.phoneNumber,
+      "customerInfo.$.age": req.body.age,
+      "customerInfo.$.country": req.body.country,
+      "customerInfo.$.gender": req.body.gender,
+      "customerInfo.$.updatedAt": new Date(),
+    }
+  )
     .then(() => {
-      res.redirect("/");
+      res.redirect("/home");
     })
     .catch((err) => {
       console.log(err);
@@ -98,4 +138,5 @@ module.exports = {
   user_edit_get,
   user_add_get,
   user_index_get,
+  user_welcome_get,
 };
