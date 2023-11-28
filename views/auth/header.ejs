@@ -17,8 +17,8 @@
         <% } else { %>
           
           <nav class="nav nav-masthead justify-content-center float-md-end">
-          <a class="fw-bold btn <%= currentPage == "login" ? "btn-light" : null %>     " href="/login">Log in</a>
-          <a class="fw-bold btn <%= currentPage == "signup" ? "btn-light" : null %>" href="/signup">Sign up</a>
+          <a class="fw-bold btn  <%= currentPage == "login" ? "btn-light" : 'text-white-50' %>     " href="/login">Log in</a>
+          <a class="fw-bold btn <%= currentPage == "signup" ? "btn-light" : 'text-white-50' %>" href="/signup">Sign up</a>
         </nav>
         <% } %>
     </div>
